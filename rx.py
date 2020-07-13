@@ -9,8 +9,8 @@ def format_message(message):
     name = message['name']
     text = message['text']
     dt = datetime.fromtimestamp(message['time'])
-    dt_format = dt.strftime('%d/%m/%Y %H:%M:%S.%f')
-    return f'{name} {dt_format} \n{text}\n'
+    dt_format = dt.strftime('%d/%m %H:%M:%S')
+    return f'{dt_format}\n{name}: {text}\n'
 
 
 while True:

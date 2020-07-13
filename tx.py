@@ -1,6 +1,7 @@
 import requests
 
-print('--Registration--')
+print('Please complete registration:')
+
 name = input('Name: ')
 password = input('Password: ')
 
