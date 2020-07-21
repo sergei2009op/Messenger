@@ -1,12 +1,20 @@
-from flask import Flask, request, abort
-from datetime import datetime
-import time
-import requests
+# ngrok https 5000
+
+import configparser
+import json
 import random
 import re
+import requests
+import time
+from configparser import ConfigParser
+from datetime import datetime
+
+from flask import Flask, request, abort
 
 servername = 'Chibis'
 is_bot_working = False
+config = ConfigParser()
+config.read('config.ini')
 
 #Добавить получение данных из БД
 messages = [{
@@ -15,7 +23,7 @@ messages = [{
     'time': time.time()
 }]
 
-users = {}
+users = {f'{servername} bot': 1234567}
 
 app = Flask(__name__)
 
@@ -34,20 +42,37 @@ def status_view():
         'total_users': len(users),
         'total_messages': len(messages)
     }
+
+
+def check_location():
+    geo_url = 'https://geolocation-db.com/json/'
+
+    try:
+        geo_response = requests.get(geo_url)
+        geo_data = geo_response.json()
+        city = geo_data['city']
+        country = geo_data['country_code']
+        location = f'{city},{country}'
+
+        return location
+    except:
+        return "Moscow,RU"
+
+
 def look_for_weather():
-    api_url = 'http://api.openweathermap.org/data/2.5/weather'
-    city_id = 524894
-    appid = '???'
+    w_url = 'http://api.openweathermap.org/data/2.5/weather'
+    city = check_location()
+    appid = config['APIs']['weather_api']
 
     params = {
-        'id': city_id,
+        'q': city,
         'appid': appid,
         'units': 'metric',
         'lang': 'ru'
     }
 
     try:
-        w_response = requests.get(api_url, params=params)
+        w_response = requests.get(w_url, params=params)
         w_data = w_response.json()
         temperature = w_data['main']['temp']
         conditions = w_data['weather'][0]['description']
@@ -55,7 +80,21 @@ def look_for_weather():
 
         return weather
     except:
-        return 'Не могу найти('
+        return 'Не знаю('
+
+def look_for_joke():
+    url = 'http://rzhunemogu.ru/RandJSON.aspx'
+    params = {'CType': '1'}
+
+    try:
+        j_response = requests.get(url, params=params)
+        content = j_response.text[12:-2]
+        joke = re.sub(r'\s+', ' ', content)
+
+        return joke
+    except:
+        return 'Не могу вспомнить('
+
 
 def bot_check(input_text):
     global is_bot_working
@@ -69,17 +108,19 @@ def bot_check(input_text):
             is_bot_working = False
             output_text = random.choice(['До скорых встреч', 'Пока', 'Все, я спать',
                                          'Бот выключен', 'Гудбай'])
-        elif re.match('(?i)чиб[ а]|чибис|чибул[ья]', input_text):
-            if re.search('(?i)как', input_text) and re.search('(?i)дела|жизнь|ты', input_text):
+        elif re.match(r'(?i)чиб(|а|ис|ул(ь(|ка)|я))\b', input_text):
+            if re.search(r'(?i)как\b', input_text) and re.search(r'(?i)дела|жизнь|ты\b', input_text):
                 output_text = random.choice(['Все пучком', 'Отлично!', 'Супер'])
-            elif re.search('(?i)погод[аыу]', input_text):
-                output_text = look_for_weather()
+            elif re.search(r'(?i)погод(ка|[аыу])\b', input_text):
+                output_text = 'За окном ' + look_for_weather()
+            elif re.search(r'(?i)анек(|дот)\b' , input_text):
+                output_text = look_for_joke()
 
     if not is_bot_working:
         if input_text == '/start':
             is_bot_working = True
             output_text = random.choice(['Чем могу быть полезен?', 'Бот активирован.',
-                                         'Всем привет!', 'Как дела?', 'А вот и я!']) + ' Зови меня Чиба'
+                                         'Всем привет!', 'Как дела?', 'А вот и я!']) + ' Зови меня Чибис'
 
     return output_text
 
@@ -105,7 +146,6 @@ def send_view():
     bot_reply = bot_check(text)
     if bot_reply != '':
         messages.append({'name': f'{servername} bot', 'text': bot_reply, 'time': time.time()})
-
 
     return {'ok': True}
 
