@@ -11,24 +11,10 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Messenger</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" colspan="3">
-     <widget class="QLabel" name="l_name">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Chibis Messenger</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="0">
      <widget class="QLineEdit" name="lE_login">
       <property name="placeholderText">
@@ -121,6 +107,20 @@
        </layout>
       </item>
      </layout>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="QLabel" name="l_name">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Messenger</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

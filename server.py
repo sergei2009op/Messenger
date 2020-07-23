@@ -1,35 +1,33 @@
-# ngrok https 5000
+# ngrok http 5000
 
-import configparser
-import json
 import random
 import re
-import requests
 import time
+import requests
 from configparser import ConfigParser
 from datetime import datetime
-
 from flask import Flask, request, abort
 
-servername = 'Chibis'
+
 is_bot_working = False
 config = ConfigParser()
 config.read('config.ini')
+server_name = config['const']['server_name']
 
 #Добавить получение данных из БД
 messages = [{
-    'name': f'{servername} server',
+    'name': f'{server_name} server',
     'text': f'Server started. To see bot commands type /commands',
     'time': time.time()
 }]
 
-users = {f'{servername} bot': 1234567}
+users = {f'{server_name} bot': 1234567}
 
 app = Flask(__name__)
 
 @app.route('/')
 def hello_view():
-    return f'Welcome to {servername} server.' \
+    return f'Welcome to {server_name} server.' \
            f' To check status click: <a href = "/status">Status </a>'
 
 
@@ -37,7 +35,7 @@ def hello_view():
 def status_view():
     return {
         'status': True,
-        'messenger': f'{servername} messenger',
+        'messenger': f'{server_name} messenger',
         'time 1': datetime.now().strftime('%d/%m/%Y %H:%M:%S.%f'),
         'total_users': len(users),
         'total_messages': len(messages)
@@ -120,7 +118,8 @@ def bot_check(input_text):
         if input_text == '/start':
             is_bot_working = True
             output_text = random.choice(['Чем могу быть полезен?', 'Бот активирован.',
-                                         'Всем привет!', 'Как дела?', 'А вот и я!']) + ' Зови меня Чибис'
+                                         'Всем привет!', 'Как дела?',
+                                         'А вот и я!']) + f' Зови меня {server_name}'
 
     return output_text
 
@@ -145,7 +144,7 @@ def send_view():
 
     bot_reply = bot_check(text)
     if bot_reply != '':
-        messages.append({'name': f'{servername} bot', 'text': bot_reply, 'time': time.time()})
+        messages.append({'name': f'{server_name} bot', 'text': bot_reply, 'time': time.time()})
 
     return {'ok': True}
 

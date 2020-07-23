@@ -3,26 +3,32 @@
 import sys
 import requests
 import time
-from PyQt5 import QtWidgets, QtCore
+import re
+from PyQt5 import QtCore
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QMainWindow, QShortcut, QApplication
 from clientui import Ui_MainWindow
 from datetime import datetime
 from configparser import ConfigParser
 
 
-class MessengerWindow(QtWidgets.QMainWindow, Ui_MainWindow):
-    def __init__(self, url):
+class MessengerWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self, url, server_name):
         super().__init__()
         self.setupUi(self)
 
+        self.after = time.time() - 24 * 60 * 60
         self.url = url
 
+        self.l_name.setText(f'{server_name} Messenger')
         self.pB_send.pressed.connect(self.send_message)
 
-        self.after = time.time() - 24 * 60 * 60
+        self.shortcut = QShortcut(QKeySequence('Ctrl+Return'), self)
+        self.shortcut.activated.connect(self.send_message)
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_messages)
-        self.timer.start(1000)
+        self.timer.start(500)
 
     def set_status(self, text):
         self.statusbar.showMessage(text)
@@ -30,6 +36,7 @@ class MessengerWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def add_text(self, text):
         self.tB_chat.append(text)
+        self.tB_chat.append('\n')
         self.tB_chat.repaint()
 
     def format_message(self, message):
@@ -37,23 +44,31 @@ class MessengerWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         text = message['text']
         dt = datetime.fromtimestamp(message['time'])
         dt_format = dt.strftime('%d/%m/%Y %H:%M:%S')
-        return f'{dt_format}\n{name}: {text}\n'
+        return f'{dt_format}\n{name}: {text}'
 
     def update_messages(self):
         try:
             response = requests.get(f'{self.url}/messages', params={'after': self.after})
+            messages = response.json()['messages']
         except:
+            #self.set_status('Server unavailable')
             return
 
-        messages = response.json()['messages']
         for message in messages:
             self.add_text(self.format_message(message))
             self.after = message['time']
 
+    def transform(self, text):
+        result = re.sub(r'^\s+|\s+$', '', text)
+        result = re.sub(r'[^\S\n]+', ' ', result)
+        result = re.sub(r'\n+', '\n', result)
+
+        return result
+
     def send_message(self):
         name = self.lE_login.text()
         password = self.lE_password.text()
-        text = self.tE_message.toPlainText()
+        text = self.transform(self.tE_message.toPlainText())
 
         if not name or not password or not text:
             self.set_status('Fill in empty fields')
@@ -77,11 +92,11 @@ class MessengerWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.set_status('Unknown error')
 
 
-config = ConfigParser()
-config.read('config.ini')
+if __name__ == '__main__':
+    config = ConfigParser()
+    config.read('config.ini')
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = MessengerWindow(config['URLs']['server_url'])
+    app = QApplication(sys.argv)
+    window = MessengerWindow(config['URLs']['ngrok_url'], config['const']['server_name'])
     window.show()
     sys.exit(app.exec_())
