@@ -4,3 +4,5 @@
 venv/
 
 config.ini
+
+sources/__pycache__/
